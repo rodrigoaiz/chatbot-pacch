@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#4f344b">
+    <meta name="description" content="Prototipo local para consultar recursos del Portal Académico del CCH.">
+    <title>Explora CCH · Asistente académico local</title>
+    <link rel="icon" href="static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="static/styles.css">
+    <script src="static/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#question">Ir a la pregunta</a>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="wordmark" href="./">
+          <span class="wordmark-shape" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>Explora</strong><small>CCH</small></span>
+        </a>
+        <div class="header-meta">
+          <span class="local-badge"><i aria-hidden="true"></i> Modelo local</span>
+          <span class="prototype-note">Prototipo no oficial</span>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="conversation" aria-labelledby="page-title">
+          <div class="intro" id="intro">
+            <p class="eyebrow">Historia Universal I · piloto</p>
+            <h1 id="page-title">Pregunta, compara,<br><em>comprende.</em></h1>
+            <p class="intro-copy">Explora los objetos de aprendizaje del Portal Académico con respuestas breves y fuentes que puedes abrir y revisar.</p>
+            <div class="starter-questions" aria-label="Preguntas de ejemplo">
+              <button type="button" data-question="¿Qué son los derechos naturales según el liberalismo político?">¿Qué son los derechos naturales?</button>
+              <button type="button" data-question="¿Cómo influyó la Revolución francesa en el liberalismo?">Revolución francesa y liberalismo</button>
+              <button type="button" data-question="¿Cuáles son las características del liberalismo político?">Características del liberalismo</button>
+            </div>
+          </div>
+
+          <div class="messages" id="messages" aria-live="polite" aria-label="Conversación"></div>
+
+          <form class="composer" id="chat-form">
+            <label for="question">¿Qué quieres investigar?</label>
+            <div class="composer-row">
+              <textarea id="question" name="question" rows="1" maxlength="1000" placeholder="Escribe una pregunta sobre los recursos…" required></textarea>
+              <button class="send-button" type="submit" aria-label="Enviar pregunta">
+                <span>Preguntar</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 14-7-4.5 14-3-5.5L5 12Zm6.5 1.5L19 5"/></svg>
+              </button>
+            </div>
+            <p class="composer-hint">La respuesta se construye sólo con el contenido indexado. Verifica siempre las fuentes.</p>
+          </form>
+        </section>
+
+        <aside class="source-panel" aria-labelledby="sources-title">
+          <div class="source-heading">
+            <span class="source-index">↗</span>
+            <div>
+              <p class="eyebrow">Ruta de lectura</p>
+              <h2 id="sources-title">Fuentes consultadas</h2>
+            </div>
+          </div>
+          <div class="source-list" id="sources">
+            <div class="source-empty">
+              <span aria-hidden="true">01</span>
+              <p>Aquí aparecerán los recursos utilizados para construir la respuesta.</p>
+            </div>
+          </div>
+          <div class="corpus-status" id="corpus-status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span>Comprobando índice local…</span>
+          </div>
+          <p class="legal-note">Este prototipo independiente no sustituye al Portal Académico ni representa una respuesta oficial del CCH o la UNAM.</p>
+        </aside>
+      </main>
+    </div>
+  </body>
+</html>

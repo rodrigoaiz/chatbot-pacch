@@ -1,0 +1,22 @@
+[Unit]
+Description=Chatbot PACCH local
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rodrigo-aizpuru
+Group=rodrigo-aizpuru
+WorkingDirectory=/home/rodrigo-aizpuru/Documentos/Dev/chatbot-pacch
+EnvironmentFile=-/home/rodrigo-aizpuru/Documentos/Dev/chatbot-pacch/.env
+ExecStart=/home/rodrigo-aizpuru/Documentos/Dev/chatbot-pacch/.venv/bin/chatbot-pacch serve
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/rodrigo-aizpuru/Documentos/Dev/chatbot-pacch/data
+
+[Install]
+WantedBy=multi-user.target

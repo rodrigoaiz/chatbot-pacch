@@ -1,0 +1,64 @@
+[
+  {
+    "question": "¿Qué son los derechos naturales para el liberalismo político?",
+    "expected_url_contains": "liberalismopolitico/contextohistorico",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cuáles fueron las causas de la Revolución francesa?",
+    "expected_url_contains": "revolucionFrancesa/causasRevolucion",
+    "should_answer": true
+  },
+  {
+    "question": "¿Qué innovaciones tecnológicas impulsaron la Revolución industrial?",
+    "expected_url_contains": "revolucionindustrial/innovacionestecnologicas",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cuáles fueron las aportaciones económicas de Adam Smith?",
+    "expected_url_contains": "liberalismoeconomico/adamsmith",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cómo ocurrió la unificación alemana?",
+    "expected_url_contains": "unificacionAlemaniaItalia/unificacionAlemana",
+    "should_answer": true
+  },
+  {
+    "question": "¿Qué fue la Comuna de París?",
+    "expected_url_contains": "movimientoObrero/comunaParis",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cómo se desarrolló el colonialismo en África?",
+    "expected_url_contains": "colonialismoAsiaAfrica/colonialismoAfrica",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cuáles son las características del impresionismo?",
+    "expected_url_contains": "culturaSigloXIX/impresionismo",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cómo estaba organizada la sociedad feudal?",
+    "expected_url_contains": "feudalismo/sociedad-feudal",
+    "should_answer": true
+  },
+  {
+    "question": "¿Qué importancia tuvo la Enciclopedia para la Ilustración?",
+    "expected_url_contains": "ilustracion/enciclopedia",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cómo puedo reparar una computadora portátil?",
+    "should_answer": false
+  },
+  {
+    "question": "¿Qué ingredientes necesito para preparar una pizza?",
+    "should_answer": false
+  },
+  {
+    "question": "¿Cuál es la función de las mitocondrias?",
+    "should_answer": false
+  }
+]
