@@ -9,7 +9,7 @@ from chatbot_pacch.database import Database
 from chatbot_pacch.models import IngestionStats
 from chatbot_pacch.portal.chunker import chunk_document
 from chatbot_pacch.portal.crawler import PortalClient
-from chatbot_pacch.portal.discovery import discover_pages
+from chatbot_pacch.portal.discovery import discover_pages, slugify
 from chatbot_pacch.portal.extractor import extract_document
 
 
@@ -44,13 +44,13 @@ async def run_ingestion(
     stats = IngestionStats()
     run_id = database.start_run()
 
-    selected_subject = subject or settings.subject
+    selected_subject = slugify(subject or settings.subject)
     selected_all = (
         settings.index_all_objects
         if index_all_objects is None
         else index_all_objects
     )
-    selected_limit = max_pages or settings.max_pages
+    selected_limit = max_pages or (10_000 if selected_all else settings.max_pages)
 
     try:
         _check_disk(settings.database_path)

@@ -5,6 +5,7 @@ const intro = document.querySelector("#intro");
 const sources = document.querySelector("#sources");
 const status = document.querySelector("#corpus-status");
 const sendButton = form.querySelector("button[type='submit']");
+const scopeLabel = document.querySelector("#scope-label");
 let activeRequest = null;
 
 function resizeComposer() {
@@ -149,3 +150,14 @@ fetch("api/corpus")
     status.querySelector("span:last-child").textContent = "Índice local no disponible";
     status.classList.add("offline");
   });
+
+fetch("api/subjects")
+  .then((response) => response.json())
+  .then(({ subjects: indexedSubjects }) => {
+    if (indexedSubjects.length === 1) {
+      scopeLabel.textContent = `${indexedSubjects[0]} · piloto`;
+    } else if (indexedSubjects.length > 1) {
+      scopeLabel.textContent = `${indexedSubjects.length} materias indexadas · piloto`;
+    }
+  })
+  .catch(() => {});

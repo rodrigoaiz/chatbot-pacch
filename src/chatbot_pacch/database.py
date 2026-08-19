@@ -362,6 +362,19 @@ class Database:
             "embedded_chunks": int(embedded),
         }
 
+    def indexed_subjects(self) -> list[str]:
+        self.initialize()
+        with self.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT DISTINCT subject
+                FROM documents
+                WHERE active = 1
+                ORDER BY subject
+                """
+            ).fetchall()
+        return [str(row["subject"]) for row in rows]
+
     def pending_embedding_chunks(
         self, model: str, limit: int | None = None
     ) -> list[StoredChunk]:

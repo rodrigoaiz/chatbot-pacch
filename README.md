@@ -91,6 +91,73 @@ Despues de incorporar paginas nuevas o actualizadas:
 El comando solo procesa fragmentos pendientes. Puede interrumpirse y reanudarse
 sin perder los vectores ya generados.
 
+## Actualizacion completa
+
+No se entrena ni se ajusta un modelo con el contenido del portal. La aplicacion
+usa modelos generales de Ollama y construye una base RAG local. Para actualizar
+paginas modificadas y generar todos los embeddings pendientes en una sola
+operacion:
+
+```bash
+.venv/bin/chatbot-pacch sync
+```
+
+`sync` es incremental y seguro: conserva la base existente, omite paginas sin
+cambios y procesa solamente contenido nuevo o actualizado. Si
+`data/pacch.sqlite3` no existe, crea y reconstruye la base completa desde el
+portal.
+
+Para incorporar todos los objetos de aprendizaje, en lugar del piloto de
+Historia Universal I:
+
+```bash
+.venv/bin/chatbot-pacch sync --all
+```
+
+El inventario actual del portal contiene 265 objetos distribuidos en 23
+asignaturas. `--all` eleva automáticamente el límite de descubrimiento para
+incluir también las páginas internas de cada objeto; `PACCH_MAX_PAGES` conserva
+su función como límite de seguridad al sincronizar una sola materia.
+
+### Agregar una materia
+
+Consultar los nombres y slugs que publica el catalogo:
+
+```bash
+.venv/bin/chatbot-pacch subjects
+```
+
+Se puede pasar el nombre legible o el slug. La sincronizacion agrega la materia
+sin borrar las que ya estan indexadas:
+
+```bash
+.venv/bin/chatbot-pacch sync --subject "Historia de México I"
+.venv/bin/chatbot-pacch sync --subject "Matemáticas I"
+```
+
+El mismo comando descarga las paginas y genera sus embeddings. Al terminar, el
+servidor consulta conjuntamente todas las materias almacenadas; no requiere
+reiniciar ni reentrenar los modelos.
+
+En Matematicas, el MVP recupera y explica contenido textual, pero el modelo
+compacto no debe considerarse un solucionador fiable de operaciones o
+demostraciones. Sus resultados deben validarse contra el recurso enlazado.
+
+## Recuperacion en otra computadora
+
+El repositorio incluye `scripts/rebuild-local.sh`. En una computadora con Git,
+Python 3.14 y Ollama, este script crea el entorno, instala la aplicacion,
+descarga los modelos y reconstruye SQLite desde el Portal Academico:
+
+```bash
+git clone https://github.com/rodrigoaiz/chatbot-pacch.git
+cd chatbot-pacch
+./scripts/rebuild-local.sh
+```
+
+Este proceso no recupera conversaciones ni una copia anterior de SQLite: genera
+un indice nuevo con el contenido que publique el portal en ese momento.
+
 ## Diagnostico RAG
 
 Probar la recuperacion sin invocar el modelo generativo:
@@ -132,6 +199,7 @@ Endpoints actuales:
 
 - `GET /api/health`
 - `GET /api/corpus`
+- `GET /api/subjects`
 - `POST /api/search`
 - `POST /api/chat` (`application/x-ndjson` en streaming)
 

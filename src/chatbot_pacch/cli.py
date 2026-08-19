@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from collections import Counter
 from dataclasses import asdict
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from chatbot_pacch.ollama import OllamaClient, OllamaError
 from chatbot_pacch.rag.answer import build_messages
 from chatbot_pacch.rag.embeddings import embed_pending_chunks
 from chatbot_pacch.rag.retrieval import HybridRetriever, has_sufficient_evidence
+from chatbot_pacch.portal.crawler import PortalClient
+from chatbot_pacch.portal.discovery import parse_catalog
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -31,6 +34,14 @@ def _parser() -> argparse.ArgumentParser:
     embed.add_argument("--limit", type=int, help="Limite de fragmentos")
     embed.add_argument("--batch-size", type=int, default=8)
 
+    sync = subcommands.add_parser(
+        "sync", help="Actualiza paginas y genera sus embeddings"
+    )
+    sync.add_argument("--subject", help="Slug de la asignatura")
+    sync.add_argument("--all", action="store_true", help="Indexa todo el catalogo")
+    sync.add_argument("--limit", type=int, help="Limite de paginas")
+    sync.add_argument("--batch-size", type=int, default=8)
+
     search = subcommands.add_parser("search", help="Prueba la busqueda hibrida")
     search.add_argument("query")
     search.add_argument("--limit", type=int, default=4)
@@ -44,6 +55,7 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     subcommands.add_parser("status", help="Muestra el estado local")
+    subcommands.add_parser("subjects", help="Lista las materias disponibles")
     subcommands.add_parser("serve", help="Inicia el servidor web local")
     return parser
 
@@ -65,6 +77,25 @@ async def _status() -> int:
     return 0
 
 
+async def _subjects() -> int:
+    settings = get_settings()
+    async with PortalClient(
+        settings.portal_base_url,
+        settings.user_agent,
+        settings.request_delay_seconds,
+        settings.request_timeout_seconds,
+    ) as client:
+        html = await client.get_text(
+            f"{settings.portal_base_url}/objetos-de-aprendizaje"
+        )
+    objects = parse_catalog(html, settings.portal_base_url)
+    counts = Counter((item.subject_slug, item.subject) for item in objects)
+    print(f"{len(objects)} objetos de aprendizaje en {len(counts)} asignaturas\n")
+    for (slug, name), count in counts.items():
+        print(f"{name} ({count})\n  {slug}")
+    return 0
+
+
 async def _ingest(args: argparse.Namespace) -> int:
     settings = get_settings()
     stats = await run_ingestion(
@@ -83,6 +114,30 @@ async def _embed(args: argparse.Namespace) -> int:
     )
     print(json.dumps(asdict(stats), indent=2, ensure_ascii=False))
     return 0
+
+
+async def _sync(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    ingestion = await run_ingestion(
+        settings,
+        subject=args.subject,
+        index_all_objects=True if args.all else None,
+        max_pages=args.limit,
+    )
+    embeddings = await embed_pending_chunks(
+        settings, batch_size=max(1, args.batch_size)
+    )
+    print(
+        json.dumps(
+            {
+                "ingestion": asdict(ingestion),
+                "embeddings": asdict(embeddings),
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
+    )
+    return 1 if ingestion.failed else 0
 
 
 async def _search(query: str, limit: int) -> int:
@@ -126,10 +181,14 @@ def main() -> int:
     args = _parser().parse_args()
     if args.command == "status":
         return asyncio.run(_status())
+    if args.command == "subjects":
+        return asyncio.run(_subjects())
     if args.command == "ingest":
         return asyncio.run(_ingest(args))
     if args.command == "embed":
         return asyncio.run(_embed(args))
+    if args.command == "sync":
+        return asyncio.run(_sync(args))
     if args.command == "search":
         return asyncio.run(_search(args.query, args.limit))
     if args.command == "ask":

@@ -20,6 +20,17 @@ async def test_corpus_endpoint_is_available() -> None:
 
 
 @pytest.mark.asyncio
+async def test_subjects_endpoint_is_available() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://test"
+    ) as client:
+        response = await client.get("/api/subjects")
+    assert response.status_code == 200
+    assert isinstance(response.json()["subjects"], list)
+
+
+@pytest.mark.asyncio
 async def test_chat_streams_sources_and_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
     result = SearchResult(
         chunk_id=1,

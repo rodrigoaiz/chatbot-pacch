@@ -80,6 +80,11 @@ async def corpus() -> dict[str, int]:
     return database.corpus_stats()
 
 
+@app.get("/api/subjects")
+async def indexed_subjects() -> dict[str, list[str]]:
+    return {"subjects": database.indexed_subjects()}
+
+
 @app.post("/api/search")
 async def search(payload: QueryRequest) -> dict[str, object]:
     results = await retriever.search(payload.question, 6)
