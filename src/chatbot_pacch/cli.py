@@ -14,7 +14,7 @@ from chatbot_pacch.database import Database
 from chatbot_pacch.ingest import run_ingestion
 from chatbot_pacch.evaluation import evaluate_retrieval
 from chatbot_pacch.ollama import OllamaClient, OllamaError
-from chatbot_pacch.rag.answer import build_messages
+from chatbot_pacch.rag.answer import build_messages, public_source_url
 from chatbot_pacch.rag.embeddings import embed_pending_chunks
 from chatbot_pacch.rag.retrieval import HybridRetriever, has_sufficient_evidence
 from chatbot_pacch.portal.crawler import PortalClient
@@ -167,7 +167,7 @@ async def _ask(question: str) -> int:
     print()
     print("\nFuentes:")
     for url in dict.fromkeys(result.url for result in results):
-        print(f"- {url}")
+        print(f"- {public_source_url(url)}")
     return 0
 
 

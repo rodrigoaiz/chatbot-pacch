@@ -67,3 +67,14 @@ def test_extract_document_supports_legacy_empty_main_anchor() -> None:
     assert document.title == "La Ilustración"
     assert "siglo XVIII" in document.text
     assert "Navegación lateral" not in document.text
+
+
+def test_extract_document_supports_direct_body_field_text() -> None:
+    html = """
+    <main>
+      <h1>Geografía 1</h1>
+      <div class="text-formatted field field--name-body field__item">En esta sección puedes consultar recursos interactivos para aprender temas comunes de Geografía.</div>
+    </main>
+    """
+    document = extract_document(html, _page())
+    assert "recursos interactivos" in document.text

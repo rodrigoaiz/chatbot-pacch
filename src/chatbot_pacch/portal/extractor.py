@@ -101,7 +101,9 @@ def extract_document(html: str, page: DiscoveredPage) -> ExtractedDocument:
             sections.append(Section(heading=heading, blocks=tuple(unique)))
         blocks = []
 
-    for element in main.find_all(["h1", "h2", "h3", "h4", "p", "li", "table"]):
+    for element in main.find_all(
+        ["h1", "h2", "h3", "h4", "p", "li", "table", "div"]
+    ):
         if not isinstance(element, Tag):
             continue
         if element.name in {"h1", "h2", "h3", "h4"}:
@@ -110,6 +112,12 @@ def extract_document(html: str, page: DiscoveredPage) -> ExtractedDocument:
                 flush()
                 heading = next_heading
             continue
+        if element.name == "div":
+            classes = set(element.get("class", []))
+            if "field--name-body" not in classes or element.find(
+                ["p", "li", "table"]
+            ):
+                continue
         if element.find_parent(["li", "table"]) is not None:
             continue
         value = _clean_text(element.get_text(" ", strip=True))

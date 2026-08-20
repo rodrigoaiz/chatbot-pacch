@@ -1,5 +1,10 @@
 from chatbot_pacch.models import SearchResult
-from chatbot_pacch.rag.answer import SYSTEM_PROMPT, build_messages, public_sources
+from chatbot_pacch.rag.answer import (
+    SYSTEM_PROMPT,
+    build_messages,
+    public_source_url,
+    public_sources,
+)
 from chatbot_pacch.rag.retrieval import has_sufficient_evidence
 
 
@@ -30,6 +35,14 @@ def test_public_sources_are_unique_by_url() -> None:
     sources = public_sources([_result(), _result(chunk_id=2)])
     assert len(sources) == 1
     assert sources[0]["title"] == "Liberalismo político"
+
+
+def test_public_source_url_uses_valid_portal_mirror() -> None:
+    url = "https://portalacademico.cch.unam.mx/alumno/biologia1/recurso"
+    assert (
+        public_source_url(url)
+        == "https://e1.portalacademico.cch.unam.mx/alumno/biologia1/recurso"
+    )
 
 
 def test_evidence_accepts_strong_match_and_rejects_unrelated_query() -> None:

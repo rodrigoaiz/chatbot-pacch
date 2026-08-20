@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 from chatbot_pacch.config import get_settings
 from chatbot_pacch.database import Database
 from chatbot_pacch.ollama import OllamaClient, OllamaError
-from chatbot_pacch.rag.answer import build_messages, public_sources
+from chatbot_pacch.rag.answer import build_messages, public_source_url, public_sources
 from chatbot_pacch.rag.retrieval import HybridRetriever, has_sufficient_evidence
 
 
@@ -95,7 +95,7 @@ async def search(payload: QueryRequest) -> dict[str, object]:
                 "title": result.title,
                 "heading": result.heading,
                 "subject": result.subject,
-                "url": result.url,
+                "url": public_source_url(result.url),
                 "excerpt": result.text[:280],
                 "semantic_score": result.semantic_score,
             }

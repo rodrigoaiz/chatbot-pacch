@@ -8,13 +8,14 @@ from chatbot_pacch.config import Settings
 from chatbot_pacch.database import Database
 from chatbot_pacch.models import IngestionStats
 from chatbot_pacch.portal.chunker import chunk_document
-from chatbot_pacch.portal.crawler import PortalClient
+from chatbot_pacch.portal.crawler import PortalClient, PortalRequestError
 from chatbot_pacch.portal.discovery import discover_pages, slugify
 from chatbot_pacch.portal.extractor import extract_document
 
 
 MIN_FREE_DISK_BYTES = 8 * 1024**3
 PROCESSOR_VERSION = "1"
+SKIP_PROCESSOR_VERSION = "2"
 
 
 def _content_hash(text: str) -> str:
@@ -30,6 +31,11 @@ def _check_disk(path: Path) -> None:
         raise RuntimeError(
             "La ingestion se detuvo porque quedan menos de 8 GB libres en disco"
         )
+
+
+def _is_permanently_missing(error: PortalRequestError) -> bool:
+    message = str(error)
+    return "404 Not Found" in message or "410 Gone" in message
 
 
 async def run_ingestion(
@@ -83,7 +89,7 @@ async def run_ingestion(
                     continue
                 if (
                     skip_state
-                    and skip_state.processor_version == PROCESSOR_VERSION
+                    and skip_state.processor_version == SKIP_PROCESSOR_VERSION
                     and skip_state.lastmod == page.lastmod
                 ):
                     stats.skipped += 1
@@ -117,7 +123,19 @@ async def run_ingestion(
                             page.url,
                             page.lastmod,
                             str(exc),
-                            PROCESSOR_VERSION,
+                            SKIP_PROCESSOR_VERSION,
+                        )
+                        stats.skipped += 1
+                        continue
+                    stats.failed += 1
+                    stats.errors.append(f"{page.url}: {exc}")
+                except PortalRequestError as exc:
+                    if _is_permanently_missing(exc):
+                        database.record_skipped_page(
+                            page.url,
+                            page.lastmod,
+                            str(exc),
+                            SKIP_PROCESSOR_VERSION,
                         )
                         stats.skipped += 1
                         continue
