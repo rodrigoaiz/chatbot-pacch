@@ -139,9 +139,10 @@ El mismo comando descarga las paginas y genera sus embeddings. Al terminar, el
 servidor consulta conjuntamente todas las materias almacenadas; no requiere
 reiniciar ni reentrenar los modelos.
 
-En Matematicas, el MVP recupera y explica contenido textual, pero el modelo
-compacto no debe considerarse un solucionador fiable de operaciones o
-demostraciones. Sus resultados deben validarse contra el recurso enlazado.
+En Matematicas, el MVP puede presentar expresiones sencillas con formato LaTeX,
+pero el modelo compacto no debe considerarse un solucionador fiable de
+operaciones o demostraciones. Sus resultados deben validarse contra el recurso
+enlazado.
 
 ## Recuperacion en otra computadora
 
@@ -185,6 +186,35 @@ El conjunto `evaluation/historia_universal_1.json` contiene preguntas
 contestables y fuera de alcance. El resultado esperado para el corpus piloto es
 100 % de recuperacion `Recall@5` y 100 % de rechazo en ese conjunto pequeno; no
 representa una evaluacion academica exhaustiva.
+
+## Auditoria De Rutas
+
+El sitemap es la fuente de rutas, pero la cobertura se verifica cruzando el
+catalogo de objetos, las paginas del sitemap y el indice SQLite:
+
+```bash
+.venv/bin/chatbot-pacch audit --all
+```
+
+El reporte comprueba:
+
+- Que cada objeto del catalogo tenga paginas asociadas en el sitemap.
+- Que cada pagina descubierta este indexada o registrada como excluida.
+- Que no existan paginas faltantes o documentos obsoletos.
+- Que no haya paginas duplicadas o con `//` en el path.
+- Que las asignaturas del catalogo aparezcan en SQLite.
+- Que todos los fragmentos tengan embeddings.
+
+La auditoria actual devuelve `complete: true`, con 265 objetos, 3,082 paginas
+descubiertas, 3,069 paginas indexadas y 13 exclusiones conocidas. Las
+exclusiones corresponden a rutas 404 o portadas sin texto academico extraible;
+no son paginas faltantes silenciosas.
+
+La auditoria valida cobertura e integridad del indice. No fuerza una peticion
+HTTP a cada una de las 3,082 paginas en cada ejecucion, para consultar el portal
+respetuosamente. Las ligas publicas se normalizan: las rutas antiguas
+`/alumno/...` usan `e1.portalacademico.cch.unam.mx`, mientras los objetos
+modernos conservan `portalacademico.cch.unam.mx`.
 
 ## Servidor
 

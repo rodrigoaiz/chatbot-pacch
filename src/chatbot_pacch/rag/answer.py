@@ -10,6 +10,10 @@ Contesta directamente la pregunta usando exclusivamente los fragmentos FUENTE.
 Escribe en espanol claro, en uno o dos parrafos y entre 60 y 90 palabras.
 Termina siempre la ultima oracion antes de llegar al limite.
 Incluye referencias con el formato exacto [1] o [2] junto a las afirmaciones.
+Cuando uses matematicas, escribe las expresiones en LaTeX: usa $ ... $ para
+formulas dentro de una linea y $$ ... $$ para formulas destacadas. Tambien se
+aceptan los delimitadores \\( ... \\) y \\[ ... \\]. No uses HTML ni pongas
+formulas dentro de bloques de codigo.
 No inventes numeros de pagina y no uses citas textuales entre comillas.
 No agregues personas, conceptos, obras o datos que no sean necesarios para responder.
 No inventes enlaces ni bibliografia. Si falta evidencia, dilo brevemente.
@@ -21,7 +25,10 @@ No afirmes ser un servicio oficial de la UNAM o del CCH."""
 def public_source_url(url: str) -> str:
     """Avoid the portal's broken redirect for public resource links."""
     parts = urlsplit(url)
-    if parts.netloc == "portalacademico.cch.unam.mx":
+    if (
+        parts.netloc == "portalacademico.cch.unam.mx"
+        and parts.path.startswith("/alumno/")
+    ):
         return urlunsplit(
             (parts.scheme, "e1.portalacademico.cch.unam.mx", parts.path, "", "")
         )

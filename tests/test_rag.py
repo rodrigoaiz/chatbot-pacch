@@ -1,4 +1,5 @@
 from chatbot_pacch.models import SearchResult
+from chatbot_pacch.audit import malformed_urls
 from chatbot_pacch.rag.answer import (
     SYSTEM_PROMPT,
     build_messages,
@@ -31,6 +32,14 @@ def test_prompt_uses_numbered_sources_and_silent_safety_rule() -> None:
     assert "Aplica estas reglas en silencio" in SYSTEM_PROMPT
 
 
+def test_prompt_requests_latex_for_mathematical_expressions() -> None:
+    assert "LaTeX" in SYSTEM_PROMPT
+    assert "$ ... $" in SYSTEM_PROMPT
+    assert "$$ ... $$" in SYSTEM_PROMPT
+    assert r"\( ... \)" in SYSTEM_PROMPT
+    assert r"\[ ... \]" in SYSTEM_PROMPT
+
+
 def test_public_sources_are_unique_by_url() -> None:
     sources = public_sources([_result(), _result(chunk_id=2)])
     assert len(sources) == 1
@@ -43,6 +52,20 @@ def test_public_source_url_uses_valid_portal_mirror() -> None:
         public_source_url(url)
         == "https://e1.portalacademico.cch.unam.mx/alumno/biologia1/recurso"
     )
+
+
+def test_public_source_url_keeps_modern_object_on_main_portal() -> None:
+    url = "https://portalacademico.cch.unam.mx/ingles1/tell-me-about-you/cultural-clip"
+    assert public_source_url(url) == url
+
+
+def test_audit_detects_malformed_route() -> None:
+    urls = [
+        "https://portalacademico.cch.unam.mx/alumno/recurso",
+        "https://portalacademico.cch.unam.mx/ingles1/recurso",
+        "https://portalacademico.cch.unam.mx/alumno/recurso//roto",
+    ]
+    assert malformed_urls(urls, "https://portalacademico.cch.unam.mx") == [urls[2]]
 
 
 def test_evidence_accepts_strong_match_and_rejects_unrelated_query() -> None:

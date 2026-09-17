@@ -11,6 +11,7 @@ import uvicorn
 
 from chatbot_pacch.config import get_settings
 from chatbot_pacch.database import Database
+from chatbot_pacch.audit import audit_catalog, report_dict
 from chatbot_pacch.ingest import run_ingestion
 from chatbot_pacch.evaluation import evaluate_retrieval
 from chatbot_pacch.ollama import OllamaClient, OllamaError
@@ -48,6 +49,12 @@ def _parser() -> argparse.ArgumentParser:
 
     ask = subcommands.add_parser("ask", help="Prueba una respuesta RAG")
     ask.add_argument("question")
+
+    audit = subcommands.add_parser(
+        "audit", help="Compara catalogo, sitemap e indice local"
+    )
+    audit.add_argument("--subject", help="Slug de la asignatura")
+    audit.add_argument("--all", action="store_true", help="Audita todo el catalogo")
 
     evaluate = subcommands.add_parser("evaluate", help="Evalua la recuperacion")
     evaluate.add_argument(
@@ -177,6 +184,16 @@ async def _evaluate(dataset: str) -> int:
     return 0 if not summary.failures else 1
 
 
+async def _audit(args: argparse.Namespace) -> int:
+    report = await audit_catalog(
+        get_settings(),
+        subject=args.subject,
+        index_all_objects=args.all,
+    )
+    print(json.dumps(report_dict(report), indent=2, ensure_ascii=False))
+    return 0 if report.complete else 1
+
+
 def main() -> int:
     args = _parser().parse_args()
     if args.command == "status":
@@ -195,6 +212,8 @@ def main() -> int:
         return asyncio.run(_ask(args.question))
     if args.command == "evaluate":
         return asyncio.run(_evaluate(args.dataset))
+    if args.command == "audit":
+        return asyncio.run(_audit(args))
     if args.command == "serve":
         settings = get_settings()
         if settings.app_host != "127.0.0.1":

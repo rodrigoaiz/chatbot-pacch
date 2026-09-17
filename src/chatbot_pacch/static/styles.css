@@ -164,6 +164,8 @@ h1 em { color: var(--orange-dark); font-style: normal; }
 .message-body { font-size: 1.02rem; line-height: 1.75; white-space: pre-wrap; }
 .message.user .message-body { padding: 0.9rem 1.15rem; background: oklch(92% 0.04 190); border-radius: 1.25rem 1.25rem 0.2rem 1.25rem; }
 .message.assistant .message-body { font-family: Georgia, "Times New Roman", serif; font-size: 1.13rem; }
+.message-body .katex { font-size: 1.05em; }
+.message-body .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; padding: 0.25rem 0; white-space: normal; }
 .message.error .message-body { color: var(--error); }
 
 .thinking { display: inline-flex; gap: 0.32rem; padding: 0.8rem 0; }

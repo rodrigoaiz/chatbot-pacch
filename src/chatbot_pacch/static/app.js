@@ -31,6 +31,20 @@ function showThinking(body) {
   body.innerHTML = '<span class="thinking" aria-label="Buscando en los recursos"><i></i><i></i><i></i></span>';
 }
 
+function renderMath(body) {
+  if (typeof renderMathInElement !== "function") return;
+  renderMathInElement(body, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "\\[", right: "\\]", display: true },
+      { left: "\\(", right: "\\)", display: false },
+      { left: "$", right: "$", display: false },
+    ],
+    throwOnError: false,
+    strict: false,
+  });
+}
+
 function renderSources(items) {
   sources.replaceChildren();
   if (!items.length) {
@@ -108,6 +122,7 @@ async function ask(text) {
       }
       if (done) break;
     }
+    renderMath(assistant.body);
   } catch (error) {
     if (error.name !== "AbortError") {
       assistant.article.classList.add("error");
