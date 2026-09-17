@@ -62,3 +62,31 @@ def test_database_replaces_document_chunks(tmp_path: Path) -> None:
     assert skip is not None
     assert skip.lastmod == "2026-01-01"
     assert skip.processor_version == "1"
+
+
+def test_lexical_search_prioritizes_all_terms_and_keeps_short_numbers(
+    tmp_path: Path,
+) -> None:
+    database = Database(tmp_path / "search.sqlite3")
+    database.initialize()
+    exact = _document("La etapa inicio el 5 de mayo")
+    broad = ExtractedDocument(
+        url="https://example.test/general",
+        title="Recurso general",
+        subject="Historia",
+        object_title="Objeto",
+        lastmod="2026-01-01",
+        sections=(Section(heading="Tema", blocks=("La etapa continuo despues",)),),
+    )
+    database.upsert_document(
+        exact, [Chunk(0, "Tema", "La etapa inicio el 5 de mayo")], "hash-1", "1"
+    )
+    database.upsert_document(
+        broad, [Chunk(0, "Tema", "La etapa continuo despues")], "hash-2", "1"
+    )
+
+    matches = database.lexical_search("etapa inicio 5", limit=5)
+
+    assert matches
+    exact_chunk_id = database.pending_embedding_chunks("embeddinggemma")[0].chunk_id
+    assert matches[0][0] == exact_chunk_id

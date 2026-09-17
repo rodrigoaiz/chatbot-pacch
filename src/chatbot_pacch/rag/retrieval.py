@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from collections import defaultdict
 
 import numpy as np
@@ -9,6 +10,39 @@ from chatbot_pacch.config import Settings
 from chatbot_pacch.database import Database
 from chatbot_pacch.models import SearchResult, StoredChunk
 from chatbot_pacch.ollama import OllamaClient
+
+
+MONTHS = (
+    "enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|"
+    "octubre|noviembre|diciembre"
+)
+FULL_DATE_RE = re.compile(
+    rf"\b(?:[0-3]?\d|primero)\s+de\s+(?:{MONTHS})"
+    rf"(?:\s+de\s+\d{{3,4}})?\b|\b[0-3]?\d[/-][01]?\d[/-]\d{{2,4}}\b",
+    re.IGNORECASE,
+)
+TEMPORAL_EVIDENCE_RE = re.compile(
+    rf"{FULL_DATE_RE.pattern}|\b(?:1\d{{3}}|20\d{{2}})\b|\bsiglo\s+[ivxlcdm]+\b",
+    re.IGNORECASE,
+)
+TEMPORAL_QUESTION_RE = re.compile(
+    r"\b(cu[aá]ndo|fecha|qu[eé]\s+d[ií]a|en\s+qu[eé]\s+a[nñ]o|siglo)\b",
+    re.IGNORECASE,
+)
+FULL_DATE_QUESTION_RE = re.compile(
+    r"\b(fecha|qu[eé]\s+d[ií]a|d[ií]a\s+exacto)\b", re.IGNORECASE
+)
+
+
+def temporal_evidence_bonus(query: str, chunk: StoredChunk) -> float:
+    if not TEMPORAL_QUESTION_RE.search(query):
+        return 0.0
+    evidence = f"{chunk.title}\n{chunk.heading}\n{chunk.text}"
+    if FULL_DATE_RE.search(evidence):
+        return 0.012
+    if TEMPORAL_EVIDENCE_RE.search(evidence):
+        return 0.003
+    return 0.0
 
 
 class HybridRetriever:
@@ -71,11 +105,18 @@ class HybridRetriever:
         chunks_by_id = {chunk.chunk_id: chunk for chunk in self._chunks}
         for chunk_id, score in list(combined.items()):
             chunk = chunks_by_id.get(chunk_id)
-            if chunk and any(
-                marker in chunk.url.casefold()
-                for marker in ("/ejercicio", "/actividad", "/bibliografia", "/creditos")
-            ):
-                combined[chunk_id] = score * 0.65
+            if chunk:
+                combined[chunk_id] += temporal_evidence_bonus(query, chunk)
+                if any(
+                    marker in chunk.url.casefold()
+                    for marker in (
+                        "/ejercicio",
+                        "/actividad",
+                        "/bibliografia",
+                        "/creditos",
+                    )
+                ):
+                    combined[chunk_id] *= 0.65
         ranked = sorted(combined, key=combined.get, reverse=True)
         results: list[SearchResult] = []
         per_url: defaultdict[str, int] = defaultdict(int)
@@ -102,9 +143,22 @@ class HybridRetriever:
         return results
 
 
-def has_sufficient_evidence(results: list[SearchResult]) -> bool:
+def has_sufficient_evidence(
+    results: list[SearchResult], question: str | None = None
+) -> bool:
     if not results:
         return False
+    if question and TEMPORAL_QUESTION_RE.search(question):
+        evidence = "\n".join(
+            f"{result.title}\n{result.heading}\n{result.text}" for result in results
+        )
+        required_pattern = (
+            FULL_DATE_RE
+            if FULL_DATE_QUESTION_RE.search(question)
+            else TEMPORAL_EVIDENCE_RE
+        )
+        if not required_pattern.search(evidence):
+            return False
     supported_lexical_match = any(
         result.lexical_rank is not None
         and result.lexical_rank <= 5

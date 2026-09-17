@@ -54,7 +54,7 @@ class OllamaClient:
             "stream": True,
             "keep_alive": "2m",
             "options": {
-                "temperature": 0.2,
+                "temperature": 0,
                 "num_predict": 140,
                 "num_ctx": 4096,
             },

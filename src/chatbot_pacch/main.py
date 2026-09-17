@@ -14,6 +14,7 @@ from chatbot_pacch.config import get_settings
 from chatbot_pacch.database import Database
 from chatbot_pacch.ollama import OllamaClient, OllamaError
 from chatbot_pacch.rag.answer import build_messages, public_source_url, public_sources
+from chatbot_pacch.rag.grounding import unsupported_precise_claims
 from chatbot_pacch.rag.retrieval import HybridRetriever, has_sufficient_evidence
 
 
@@ -89,7 +90,7 @@ async def indexed_subjects() -> dict[str, list[str]]:
 async def search(payload: QueryRequest) -> dict[str, object]:
     results = await retriever.search(payload.question, 6)
     return {
-        "sufficient": has_sufficient_evidence(results),
+        "sufficient": has_sufficient_evidence(results, payload.question),
         "results": [
             {
                 "title": result.title,
@@ -108,10 +109,10 @@ async def search(payload: QueryRequest) -> dict[str, object]:
 async def chat(payload: QueryRequest, request: Request) -> StreamingResponse:
     async def stream() -> AsyncIterator[bytes]:
         try:
-            results = await retriever.search(payload.question, 3)
+            results = await retriever.search(payload.question, 6)
             sources = public_sources(results)
             yield _event("sources", sources=sources)
-            if not has_sufficient_evidence(results):
+            if not has_sufficient_evidence(results, payload.question):
                 yield _event(
                     "token",
                     content=(
@@ -125,13 +126,27 @@ async def chat(payload: QueryRequest, request: Request) -> StreamingResponse:
 
             async with generation_slot:
                 ollama = OllamaClient(settings.ollama_base_url)
+                answer_parts: list[str] = []
                 async for token in ollama.chat_stream(
                     settings.ollama_chat_model,
                     build_messages(payload.question, results),
                 ):
                     if await request.is_disconnected():
                         return
-                    yield _event("token", content=token)
+                    answer_parts.append(token)
+            answer = "".join(answer_parts).strip()
+            unsupported = unsupported_precise_claims(answer, results)
+            if not answer or unsupported:
+                yield _event(
+                    "token",
+                    content=(
+                        "No pude verificar todos los datos precisos de la respuesta "
+                        "en las fuentes del Portal. Revisa las fuentes sugeridas."
+                    ),
+                )
+                yield _event("done", refused=True)
+                return
+            yield _event("token", content=answer)
             yield _event("done", refused=False)
         except (OllamaError, ValueError) as exc:
             yield _event("error", message=str(exc))

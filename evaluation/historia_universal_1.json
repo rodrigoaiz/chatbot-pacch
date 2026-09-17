@@ -55,10 +55,17 @@
   },
   {
     "question": "¿Qué ingredientes necesito para preparar una pizza?",
-    "should_answer": false
+    "expected_url_contains": "ingles2/eat-drink-enjoy-life/happy-meal-time",
+    "should_answer": true
   },
   {
     "question": "¿Cuál es la función de las mitocondrias?",
-    "should_answer": false
+    "expected_url_contains": "biologia1/unidad2/respiracionAerobia/proceso",
+    "should_answer": true
+  },
+  {
+    "question": "¿Cuál fue la fecha de inicio de la Independencia de México?",
+    "expected_url_contains": "independenciaMexico/etapas",
+    "should_answer": true
   }
 ]

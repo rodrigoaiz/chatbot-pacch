@@ -32,7 +32,7 @@ async def evaluate_retrieval(
 
     for case in cases:
         results = await retriever.search(case["question"], 5)
-        sufficient = has_sufficient_evidence(results)
+        sufficient = has_sufficient_evidence(results, case["question"])
         if case["should_answer"]:
             answerable_total += 1
             expected = case["expected_url_contains"]

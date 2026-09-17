@@ -19,6 +19,8 @@ SEARCH_STOPWORDS = {
     "cuál",
     "cuales",
     "cuáles",
+    "cuando",
+    "cuándo",
     "del",
     "donde",
     "dónde",
@@ -27,6 +29,7 @@ SEARCH_STOPWORDS = {
     "en",
     "esta",
     "este",
+    "fecha",
     "fue",
     "las",
     "los",
@@ -431,23 +434,42 @@ class Database:
         ]
 
     def lexical_search(self, query: str, limit: int = 20) -> list[tuple[int, int]]:
-        tokens = [
+        raw_tokens = [
             token.replace('"', '""')
             for token in re.findall(r"[^\W_]+", query.casefold(), flags=re.UNICODE)
-            if len(token) >= 3 and token not in SEARCH_STOPWORDS
+            if (len(token) >= 3 or token.isdigit()) and token not in SEARCH_STOPWORDS
         ]
+        tokens = list(dict.fromkeys(raw_tokens))
         if not tokens:
             return []
-        expression = " OR ".join(f'"{token}"' for token in tokens[:12])
+
+        terms = [f'"{token}"' for token in tokens[:12]]
+        expressions = []
+        if len(terms) > 1:
+            expressions.append(" AND ".join(terms))
+        expressions.append(" OR ".join(terms))
+
+        chunk_ids: list[int] = []
+        seen: set[int] = set()
         with self.connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT CAST(chunk_id AS INTEGER) AS chunk_id
-                FROM chunks_fts
-                WHERE chunks_fts MATCH ?
-                ORDER BY bm25(chunks_fts, 0.0, 2.0, 1.0, 1.5, 1.0)
-                LIMIT ?
-                """,
-                (expression, limit),
-            ).fetchall()
-        return [(int(row["chunk_id"]), rank) for rank, row in enumerate(rows, 1)]
+            for expression in expressions:
+                rows = connection.execute(
+                    """
+                    SELECT CAST(chunk_id AS INTEGER) AS chunk_id
+                    FROM chunks_fts
+                    WHERE chunks_fts MATCH ?
+                    ORDER BY bm25(chunks_fts, 0.0, 2.0, 1.0, 1.5, 1.0)
+                    LIMIT ?
+                    """,
+                    (expression, limit),
+                ).fetchall()
+                for row in rows:
+                    chunk_id = int(row["chunk_id"])
+                    if chunk_id not in seen:
+                        seen.add(chunk_id)
+                        chunk_ids.append(chunk_id)
+                    if len(chunk_ids) >= limit:
+                        break
+                if len(chunk_ids) >= limit:
+                    break
+        return [(chunk_id, rank) for rank, chunk_id in enumerate(chunk_ids, 1)]
